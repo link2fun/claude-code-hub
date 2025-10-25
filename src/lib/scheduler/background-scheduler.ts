@@ -180,8 +180,7 @@ class BackgroundScheduler {
         ) as has_requests
       `);
 
-      const hasRequests =
-        (result[0] as { has_requests?: boolean })?.has_requests ?? false;
+      const hasRequests = (result[0] as { has_requests?: boolean })?.has_requests ?? false;
 
       logger.trace("[BackgroundScheduler] Recent requests check", {
         intervalSeconds,
