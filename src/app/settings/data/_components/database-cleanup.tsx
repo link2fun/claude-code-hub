@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Trash2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -62,10 +62,20 @@ export function DatabaseCleanup() {
     }
   };
 
-  // 当选择变化时更新预估
+  // Debounce 函数：延迟执行，避免频繁查询
+  const debouncedFetchEstimate = useCallback((days: DaysAgo) => {
+    const timer = setTimeout(() => {
+      fetchEstimate(days);
+    }, 300); // 300ms 延迟
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  // 当选择变化时更新预估（使用 debounce）
   useEffect(() => {
-    fetchEstimate(daysAgo);
-  }, [daysAgo]);
+    const cleanup = debouncedFetchEstimate(daysAgo);
+    return cleanup;
+  }, [daysAgo, debouncedFetchEstimate]);
 
   const handleCleanupClick = () => {
     setShowConfirmDialog(true);

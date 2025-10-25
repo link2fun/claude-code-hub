@@ -53,17 +53,7 @@ export function RealtimeScheduleConfig() {
       setLoading(true);
       const result = await getRealtimeScheduleStatus();
       if (result.ok && result.data) {
-        setConfig({
-          enableRealtimeSchedule: result.data.config.enabled,
-          scheduleIntervalSeconds: result.data.config.intervalSeconds,
-          explorationRate: result.data.config.explorationRate,
-          circuitRecoveryWeightPercent: 30, // 从系统设置读取
-          circuitRecoveryObservationCount: 10,
-          maxWeightAdjustmentPercent: 10,
-          shortTermWindowMinutes: 60,
-          mediumTermWindowMinutes: 360,
-          longTermWindowMinutes: 1440,
-        });
+        setConfig(result.data.config);
       }
     } catch (error) {
       console.error("加载配置失败:", error);

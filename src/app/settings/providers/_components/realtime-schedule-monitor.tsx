@@ -33,6 +33,7 @@ import { zhCN } from "date-fns/locale";
 import type { RealtimeScheduleStatus } from "@/types/schedule";
 import type { ProviderDisplay } from "@/types/provider";
 import type { ScheduleLog } from "@/types/schedule";
+import { ResetProviderDialog } from "./reset-provider-dialog";
 
 export function RealtimeScheduleMonitor() {
   const [status, setStatus] = useState<RealtimeScheduleStatus | null>(null);
@@ -186,7 +187,7 @@ export function RealtimeScheduleMonitor() {
             <Button
               size="sm"
               onClick={handleManualTrigger}
-              disabled={triggering || !status.config.enabled}
+              disabled={triggering || !status.config.enableRealtimeSchedule}
             >
               {triggering ? (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -231,7 +232,7 @@ export function RealtimeScheduleMonitor() {
 
           {/* 配置信息 */}
           <div className="flex gap-2 flex-wrap">
-            <Badge variant="outline">间隔: {status.config.intervalSeconds}s</Badge>
+            <Badge variant="outline">间隔: {status.config.scheduleIntervalSeconds}s</Badge>
             <Badge variant="outline">探索率: {status.config.explorationRate}%</Badge>
           </div>
         </CardContent>
@@ -240,8 +241,13 @@ export function RealtimeScheduleMonitor() {
       {/* 供应商实时状态表格 */}
       <Card>
         <CardHeader>
-          <CardTitle>供应商实时状态</CardTitle>
-          <CardDescription>显示所有供应商的当前权重、基准值和最后调度时间</CardDescription>
+          <div className="flex justify-between items-center">
+            <div>
+              <CardTitle>供应商实时状态</CardTitle>
+              <CardDescription>显示所有供应商的当前权重、基准值和最后调度时间</CardDescription>
+            </div>
+            <ResetProviderDialog mode="all" onSuccess={loadData} />
+          </div>
         </CardHeader>
         <CardContent>
           <Table>
@@ -254,6 +260,7 @@ export function RealtimeScheduleMonitor() {
                 <TableHead>基准优先级</TableHead>
                 <TableHead>调整状态</TableHead>
                 <TableHead>最后调度时间</TableHead>
+                <TableHead>操作</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -372,6 +379,16 @@ export function RealtimeScheduleMonitor() {
                         ) : (
                           <span className="text-sm text-muted-foreground">从未调度</span>
                         )}
+                      </TableCell>
+
+                      {/* 操作列 */}
+                      <TableCell>
+                        <ResetProviderDialog
+                          mode="single"
+                          providerId={provider.id}
+                          providerName={provider.name}
+                          onSuccess={loadData}
+                        />
                       </TableCell>
                     </TableRow>
                   );

@@ -233,9 +233,5 @@ export interface RealtimeScheduleStatus {
   nextExecutionTime: Date | null;
   totalExecutions: number;
   lastError: string | null;
-  config: {
-    intervalSeconds: number;
-    explorationRate: number;
-    enabled: boolean;
-  };
+  config: import("./system-config").RealtimeScheduleConfig;
 }

@@ -28,9 +28,15 @@ export async function getRealtimeScheduleStatus(): Promise<{
         totalExecutions: status.totalExecutions,
         lastError: status.lastError,
         config: {
-          intervalSeconds: settings.scheduleIntervalSeconds ?? 30,
+          enableRealtimeSchedule: settings.enableRealtimeSchedule ?? false,
+          scheduleIntervalSeconds: settings.scheduleIntervalSeconds ?? 30,
           explorationRate: settings.explorationRate ?? 15,
-          enabled: settings.enableRealtimeSchedule ?? false,
+          circuitRecoveryWeightPercent: settings.circuitRecoveryWeightPercent ?? 30,
+          circuitRecoveryObservationCount: settings.circuitRecoveryObservationCount ?? 10,
+          maxWeightAdjustmentPercent: settings.maxWeightAdjustmentPercent ?? 10,
+          shortTermWindowMinutes: settings.shortTermWindowMinutes ?? 60,
+          mediumTermWindowMinutes: settings.mediumTermWindowMinutes ?? 360,
+          longTermWindowMinutes: settings.longTermWindowMinutes ?? 1440,
         },
       },
     };

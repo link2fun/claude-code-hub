@@ -6,6 +6,8 @@ import {
   updateProvider,
   deleteProvider,
   getProviderStatistics,
+  resetProviderToBaseline,
+  resetAllProvidersToBaseline,
 } from "@/repository/provider";
 import { revalidatePath } from "next/cache";
 import { logger } from "@/lib/logger";
@@ -330,6 +332,56 @@ export async function resetProviderCircuit(providerId: number): Promise<ActionRe
   } catch (error) {
     logger.error("重置熔断器失败:", error);
     const message = error instanceof Error ? error.message : "重置熔断器失败";
+    return { ok: false, error: message };
+  }
+}
+
+/**
+ * 重置单个供应商到基准配置
+ */
+export async function resetProvider(providerId: number): Promise<ActionResult> {
+  try {
+    const session = await getSession();
+    if (!session || session.user.role !== "admin") {
+      return { ok: false, error: "无权限执行此操作" };
+    }
+
+    const provider = await resetProviderToBaseline(providerId);
+    
+    if (!provider) {
+      return { ok: false, error: "供应商不存在" };
+    }
+
+    revalidatePath("/settings/providers");
+    logger.info("[ProviderActions] Provider reset to baseline", { providerId });
+
+    return { ok: true };
+  } catch (error) {
+    logger.error("重置供应商到基准配置失败:", error);
+    const message = error instanceof Error ? error.message : "重置失败";
+    return { ok: false, error: message };
+  }
+}
+
+/**
+ * 重置所有供应商到基准配置
+ */
+export async function resetAllProviders(): Promise<ActionResult<{ affectedCount: number }>> {
+  try {
+    const session = await getSession();
+    if (!session || session.user.role !== "admin") {
+      return { ok: false, error: "无权限执行此操作" };
+    }
+
+    const affectedCount = await resetAllProvidersToBaseline();
+
+    revalidatePath("/settings/providers");
+    logger.info("[ProviderActions] All providers reset to baseline", { affectedCount });
+
+    return { ok: true, data: { affectedCount } };
+  } catch (error) {
+    logger.error("重置所有供应商到基准配置失败:", error);
+    const message = error instanceof Error ? error.message : "批量重置失败";
     return { ok: false, error: message };
   }
 }
