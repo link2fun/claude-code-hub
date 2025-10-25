@@ -87,10 +87,7 @@ function createFallbackSettings(): SystemSettings {
  */
 export async function getSystemSettings(): Promise<SystemSettings> {
   try {
-    const [settings] = await db
-      .select()
-      .from(systemSettings)
-      .limit(1);
+    const [settings] = await db.select().from(systemSettings).limit(1);
 
     if (settings) {
       return toSystemSettings(settings);
@@ -110,10 +107,7 @@ export async function getSystemSettings(): Promise<SystemSettings> {
     }
 
     // 如果并发导致没有返回，重新查询一次
-    const [fallback] = await db
-      .select()
-      .from(systemSettings)
-      .limit(1);
+    const [fallback] = await db.select().from(systemSettings).limit(1);
 
     if (!fallback) {
       throw new Error("Failed to initialize system settings");
