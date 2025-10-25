@@ -176,6 +176,11 @@ export async function updateProvider(
   if (providerData.rpm !== undefined) dbData.rpm = providerData.rpm;
   if (providerData.rpd !== undefined) dbData.rpd = providerData.rpd;
   if (providerData.cc !== undefined) dbData.cc = providerData.cc;
+  // 调度相关字段
+  if (providerData.base_weight !== undefined) dbData.baseWeight = providerData.base_weight;
+  if (providerData.base_priority !== undefined) dbData.basePriority = providerData.base_priority;
+  if (providerData.last_schedule_time !== undefined)
+    dbData.lastScheduleTime = providerData.last_schedule_time;
 
   const [provider] = await db
     .update(providers)
@@ -290,6 +295,66 @@ export async function getProviderStatistics(): Promise<
       message: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined,
     });
+    throw error;
+  }
+}
+
+/**
+ * 重置所有启用的供应商到基准配置
+ * 用于开启实时调度时初始化所有供应商
+ */
+export async function resetAllProvidersToBaseline(): Promise<number> {
+  try {
+    logger.info("[Provider] Resetting all providers to baseline");
+
+    // 更新所有启用的供应商
+    const result = await db
+      .update(providers)
+      .set({
+        weight: sql`COALESCE(${providers.baseWeight}, ${providers.weight})`,
+        priority: sql`COALESCE(${providers.basePriority}, ${providers.priority})`,
+        // 如果没有基准值，则将当前值设为基准值
+        baseWeight: sql`COALESCE(${providers.baseWeight}, ${providers.weight})`,
+        basePriority: sql`COALESCE(${providers.basePriority}, ${providers.priority})`,
+        lastScheduleTime: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(and(eq(providers.isEnabled, true), isNull(providers.deletedAt)))
+      .returning({ id: providers.id });
+
+    logger.info("[Provider] Reset completed", {
+      affectedCount: result.length,
+    });
+
+    return result.length;
+  } catch (error) {
+    logger.error("[Provider] Failed to reset providers to baseline", { error });
+    throw error;
+  }
+}
+
+/**
+ * 重置单个供应商到基准配置
+ */
+export async function resetProviderToBaseline(id: number): Promise<Provider | null> {
+  try {
+    const provider = await findProviderById(id);
+    if (!provider) {
+      return null;
+    }
+
+    const baseWeight = provider.baseWeight ?? provider.weight;
+    const basePriority = provider.basePriority ?? provider.priority;
+
+    return await updateProvider(id, {
+      weight: baseWeight,
+      priority: basePriority,
+      base_weight: baseWeight,
+      base_priority: basePriority,
+      last_schedule_time: new Date(),
+    });
+  } catch (error) {
+    logger.error("[Provider] Failed to reset provider to baseline", { providerId: id, error });
     throw error;
   }
 }

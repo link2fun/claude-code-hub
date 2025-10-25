@@ -83,6 +83,11 @@ export const providers = pgTable('providers', {
   limitMonthlyUsd: numeric('limit_monthly_usd', { precision: 10, scale: 2 }),
   limitConcurrentSessions: integer('limit_concurrent_sessions').default(0),
 
+  // 自动调度基准值（用于恢复）
+  baseWeight: integer('base_weight'),
+  basePriority: integer('base_priority'),
+  lastScheduleTime: timestamp('last_schedule_time', { withTimezone: true }),
+
   // 废弃（保留向后兼容，但不再使用）
   tpm: integer('tpm').default(0),
   rpm: integer('rpm').default(0),
@@ -203,9 +208,93 @@ export const systemSettings = pgTable('system_settings', {
   id: serial('id').primaryKey(),
   siteTitle: varchar('site_title', { length: 128 }).notNull().default('Claude Code Hub'),
   allowGlobalUsageView: boolean('allow_global_usage_view').notNull().default(false),
+
+  // 自动调度配置（定时调度，已废弃但保留兼容）
+  enableAutoSchedule: boolean('enable_auto_schedule').notNull().default(false),
+  scheduleTime: varchar('schedule_time', { length: 5 }).default('02:00'), // HH:mm 格式
+  minSampleSize: integer('min_sample_size').default(10),
+  scheduleWindowHours: integer('schedule_window_hours').default(24),
+
+  // 实时调度配置（Multi-Armed Bandit 算法）
+  enableRealtimeSchedule: boolean('enable_realtime_schedule').notNull().default(false),
+  scheduleIntervalSeconds: integer('schedule_interval_seconds').default(30), // 调度间隔（秒）
+  explorationRate: integer('exploration_rate').default(15), // 探索率（百分比，0-100）
+  circuitRecoveryWeightPercent: integer('circuit_recovery_weight_percent').default(30), // 熔断恢复权重百分比
+  circuitRecoveryObservationCount: integer('circuit_recovery_observation_count').default(10), // 熔断恢复观察请求数
+  maxWeightAdjustmentPercent: integer('max_weight_adjustment_percent').default(10), // 单次最大权重调整百分比
+  shortTermWindowMinutes: integer('short_term_window_minutes').default(60), // 短期窗口（分钟）
+  mediumTermWindowMinutes: integer('medium_term_window_minutes').default(360), // 中期窗口（分钟）
+  longTermWindowMinutes: integer('long_term_window_minutes').default(1440), // 长期窗口（分钟）
+
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
 });
+
+// Provider Schedule Logs table
+export const providerScheduleLogs = pgTable('provider_schedule_logs', {
+  id: serial('id').primaryKey(),
+  executionTime: timestamp('execution_time', { withTimezone: true }).notNull(),
+
+  // 执行信息
+  executedBy: varchar('executed_by', { length: 50 }).notNull(), // 'auto' | 'manual' | username
+  dryRun: boolean('dry_run').notNull().default(false),
+
+  // 统计摘要
+  totalProviders: integer('total_providers').notNull(),
+  analyzedProviders: integer('analyzed_providers').notNull(),
+  affectedProviders: integer('affected_providers').notNull(),
+
+  // 完整决策链（核心！）
+  decisions: jsonb('decisions').notNull().$type<Array<{
+    providerId: number;
+    providerName: string;
+    beforeState: {
+      weight: number;
+      priority: number;
+      performanceScore: number;
+      circuitState: string;
+    };
+    afterState: {
+      weight: number;
+      priority: number;
+      performanceScore: number;
+      adjustmentReason: string;
+    };
+    metrics: {
+      todayRequests: number;
+      yesterdayRequests: number;
+      todayErrorRate: number;
+      yesterdayErrorRate: number;
+      todayAvgResponseTime: number;
+      yesterdayAvgResponseTime: number;
+      todayCostUsd: string;
+      yesterdayCostUsd: string;
+    };
+    action: string;
+    reason: string;
+    confidence: number;
+    baseline: {
+      weight: number;
+      priority: number;
+    };
+  }>>(),
+
+  // 汇总信息
+  summary: jsonb('summary').$type<{
+    promoted: number;
+    demoted: number;
+    maintained: number;
+    recovered: number;
+    circuitOpen: number;
+  }>(),
+
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+}, (table) => ({
+  // 优化执行时间查询
+  scheduleLogsExecutionTimeIdx: index('idx_schedule_logs_execution_time').on(table.executionTime.desc()),
+  // 基础索引
+  scheduleLogsCreatedAtIdx: index('idx_schedule_logs_created_at').on(table.createdAt.desc()),
+}));
 
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({

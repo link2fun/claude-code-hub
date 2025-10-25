@@ -21,6 +21,7 @@ import type { ImportProgressEvent } from "@/types/database-backup";
 export function DatabaseImport() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [cleanFirst, setCleanFirst] = useState(true);
+  const [excludeMessageRequest, setExcludeMessageRequest] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [progressMessages, setProgressMessages] = useState<string[]>([]);
@@ -65,6 +66,7 @@ export function DatabaseImport() {
       const formData = new FormData();
       formData.append('file', selectedFile);
       formData.append('cleanFirst', cleanFirst.toString());
+      formData.append('excludeMessageRequest', excludeMessageRequest.toString());
 
       // 调用导入 API（SSE 流式响应，自动携带 cookie）
       const response = await fetch('/api/admin/database/import', {
@@ -162,24 +164,47 @@ export function DatabaseImport() {
       </div>
 
       {/* 导入选项 */}
-      <div className="flex items-start gap-2">
-        <Checkbox
-          id="clean-first"
-          checked={cleanFirst}
-          onCheckedChange={(checked: boolean) => setCleanFirst(checked === true)}
-          disabled={isImporting}
-        />
-        <div className="grid gap-1.5 leading-none">
-          <Label
-            htmlFor="clean-first"
-            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-          >
-            清除现有数据（覆盖模式）
-          </Label>
-          <p className="text-xs text-muted-foreground">
-            导入前删除所有现有数据，确保数据库与备份文件完全一致。
-            如果不勾选，将尝试合并数据，但可能因主键冲突而失败。
-          </p>
+      <div className="flex flex-col gap-3">
+        <div className="flex items-start gap-2">
+          <Checkbox
+            id="clean-first"
+            checked={cleanFirst}
+            onCheckedChange={(checked: boolean) => setCleanFirst(checked === true)}
+            disabled={isImporting}
+          />
+          <div className="grid gap-1.5 leading-none">
+            <Label
+              htmlFor="clean-first"
+              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+            >
+              清除现有数据（覆盖模式）
+            </Label>
+            <p className="text-xs text-muted-foreground">
+              导入前删除所有现有数据，确保数据库与备份文件完全一致。
+              如果不勾选，将尝试合并数据，但可能因主键冲突而失败。
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-start gap-2">
+          <Checkbox
+            id="exclude-message-request-import"
+            checked={excludeMessageRequest}
+            onCheckedChange={(checked: boolean) => setExcludeMessageRequest(checked === true)}
+            disabled={isImporting}
+          />
+          <div className="grid gap-1.5 leading-none">
+            <Label
+              htmlFor="exclude-message-request-import"
+              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+            >
+              排除日志数据（仅导入配置）
+            </Label>
+            <p className="text-xs text-muted-foreground">
+              仅导入用户、密钥、供应商等配置数据，不还原历史请求日志。
+              适合配置迁移场景，保留现有日志数据。
+            </p>
+          </div>
         </div>
       </div>
 
@@ -223,10 +248,15 @@ export function DatabaseImport() {
                 {cleanFirst
                   ? '您选择了「覆盖模式」，这将会删除所有现有数据后导入备份。'
                   : '您选择了「合并模式」，这将尝试在保留现有数据的基础上导入备份。'}
+                {excludeMessageRequest && ' 日志数据将被排除，仅导入配置数据。'}
               </p>
               <p className="font-semibold text-foreground">
-                {cleanFirst
+                {cleanFirst && !excludeMessageRequest
                   ? '⚠️ 警告：此操作不可逆，所有当前数据将被永久删除！'
+                  : cleanFirst && excludeMessageRequest
+                  ? '⚠️ 警告：此操作将删除所有配置数据，但保留日志数据！'
+                  : !cleanFirst && excludeMessageRequest
+                  ? '⚠️ 注意：将仅导入配置数据，日志数据保持不变。如果存在主键冲突，导入可能会失败。'
                   : '⚠️ 注意：如果存在主键冲突，导入可能会失败。'}
               </p>
               <p>

@@ -29,6 +29,10 @@ export async function register() {
       const { ensurePriceTable } = await import("@/lib/price-sync/seed-initializer");
       await ensurePriceTable();
 
+      // 初始化后台调度器
+      const { initBackgroundScheduler } = await import("@/lib/scheduler/background-scheduler");
+      await initBackgroundScheduler();
+
       logger.info("Application ready");
     }
   }

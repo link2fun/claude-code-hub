@@ -49,6 +49,10 @@ export function toProvider(dbProvider: any): Provider {
     limitWeeklyUsd: dbProvider?.limitWeeklyUsd ? parseFloat(dbProvider.limitWeeklyUsd) : null,
     limitMonthlyUsd: dbProvider?.limitMonthlyUsd ? parseFloat(dbProvider.limitMonthlyUsd) : null,
     limitConcurrentSessions: dbProvider?.limitConcurrentSessions ?? 0,
+    // 调度基准值
+    baseWeight: dbProvider?.baseWeight ?? null,
+    basePriority: dbProvider?.basePriority ?? null,
+    lastScheduleTime: dbProvider?.lastScheduleTime ? new Date(dbProvider.lastScheduleTime) : null,
     tpm: dbProvider?.tpm ?? null,
     rpm: dbProvider?.rpm ?? null,
     rpd: dbProvider?.rpd ?? null,
@@ -86,7 +90,22 @@ export function toSystemSettings(dbSettings: any): SystemSettings {
   return {
     id: dbSettings?.id ?? 0,
     siteTitle: dbSettings?.siteTitle ?? "Claude Code Hub",
-    allowGlobalUsageView: dbSettings?.allowGlobalUsageView ?? true,
+    allowGlobalUsageView: dbSettings?.allowGlobalUsageView ?? false,  // ✅ 修复：与 schema 默认值一致
+    // 定时调度配置
+    enableAutoSchedule: dbSettings?.enableAutoSchedule ?? false,
+    scheduleTime: dbSettings?.scheduleTime ?? "02:00",
+    minSampleSize: dbSettings?.minSampleSize ?? 10,
+    scheduleWindowHours: dbSettings?.scheduleWindowHours ?? 24,
+    // 实时调度配置
+    enableRealtimeSchedule: dbSettings?.enableRealtimeSchedule ?? false,
+    scheduleIntervalSeconds: dbSettings?.scheduleIntervalSeconds ?? 30,
+    explorationRate: dbSettings?.explorationRate ?? 15,
+    circuitRecoveryWeightPercent: dbSettings?.circuitRecoveryWeightPercent ?? 30,
+    circuitRecoveryObservationCount: dbSettings?.circuitRecoveryObservationCount ?? 10,
+    maxWeightAdjustmentPercent: dbSettings?.maxWeightAdjustmentPercent ?? 10,
+    shortTermWindowMinutes: dbSettings?.shortTermWindowMinutes ?? 60,
+    mediumTermWindowMinutes: dbSettings?.mediumTermWindowMinutes ?? 360,
+    longTermWindowMinutes: dbSettings?.longTermWindowMinutes ?? 1440,
     createdAt: dbSettings?.createdAt ? new Date(dbSettings.createdAt) : new Date(),
     updatedAt: dbSettings?.updatedAt ? new Date(dbSettings.updatedAt) : new Date(),
   };

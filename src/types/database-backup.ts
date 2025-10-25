@@ -19,6 +19,38 @@ export interface DatabaseStatus {
 export interface ImportOptions {
   /** 导入前是否清除现有数据（覆盖模式） */
   cleanFirst: boolean;
+  /** 是否排除日志数据（仅导入配置） */
+  excludeMessageRequest?: boolean;
+}
+
+/**
+ * 导出选项
+ */
+export interface ExportOptions {
+  /** 是否排除日志数据（仅导出配置） */
+  excludeMessageRequest?: boolean;
+}
+
+/**
+ * 清理日志选项
+ */
+export interface CleanupOptions {
+  /** 清理时间范围（天数）：7 = 一周前，30 = 一月前，90 = 三月前 */
+  daysAgo: 7 | 30 | 90;
+}
+
+/**
+ * 清理日志结果
+ */
+export interface CleanupResult {
+  /** 是否成功 */
+  success: boolean;
+  /** 删除的记录数 */
+  deletedCount: number;
+  /** 提示信息 */
+  message: string;
+  /** 清理的时间阈值 */
+  threshold: string;
 }
 
 /**

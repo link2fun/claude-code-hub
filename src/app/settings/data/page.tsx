@@ -7,6 +7,7 @@ import { SettingsPageHeader } from "../_components/settings-page-header";
 import { DatabaseStatusDisplay } from "./_components/database-status";
 import { DatabaseExport } from "./_components/database-export";
 import { DatabaseImport } from "./_components/database-import";
+import { DatabaseCleanup } from "./_components/database-cleanup";
 import {
   Collapsible,
   CollapsibleContent,
@@ -29,6 +30,13 @@ export default function SettingsDataPage() {
         description="查看当前数据库的连接状态和基本信息。"
       >
         <DatabaseStatusDisplay />
+      </Section>
+
+      <Section
+        title="日志清理"
+        description="清理历史请求日志，释放数据库存储空间。"
+      >
+        <DatabaseCleanup />
       </Section>
 
       <Section
@@ -69,6 +77,14 @@ export default function SettingsDataPage() {
                 <li>
                   <strong>备份格式</strong>: 使用 PostgreSQL custom format (.dump)，
                   自动压缩且能够兼容不同版本的数据库结构。
+                </li>
+                <li>
+                  <strong>日志清理</strong>: 永久删除历史日志记录，
+                  此操作不可逆，建议定期清理以维护数据库性能。
+                </li>
+                <li>
+                  <strong>排除日志数据</strong>: 导入导出时可选择仅操作配置数据，
+                  适合配置迁移场景，可大幅减小备份文件体积。
                 </li>
                 <li>
                   <strong>覆盖模式</strong>: 导入前会删除所有现有数据，确保数据库与备份文件完全一致。

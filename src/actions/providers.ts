@@ -114,6 +114,10 @@ export async function getProviders(): Promise<ProviderDisplay[]> {
         limitWeeklyUsd: provider.limitWeeklyUsd,
         limitMonthlyUsd: provider.limitMonthlyUsd,
         limitConcurrentSessions: provider.limitConcurrentSessions,
+        // 自动调度基准值
+        baseWeight: provider.baseWeight,
+        basePriority: provider.basePriority,
+        lastScheduleTime: provider.lastScheduleTime ? provider.lastScheduleTime.toISOString() : null,
         tpm: provider.tpm,
         rpm: provider.rpm,
         rpd: provider.rpd,

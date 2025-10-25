@@ -23,6 +23,11 @@ export interface Provider {
   limitMonthlyUsd: number | null;
   limitConcurrentSessions: number;
 
+  // 自动调度基准值
+  baseWeight: number | null;
+  basePriority: number | null;
+  lastScheduleTime: Date | null;
+
   // 废弃（保留向后兼容，但不再使用）
   // TPM (Tokens Per Minute): 每分钟可处理的文本总量
   tpm: number | null;
@@ -58,6 +63,10 @@ export interface ProviderDisplay {
   limitWeeklyUsd: number | null;
   limitMonthlyUsd: number | null;
   limitConcurrentSessions: number;
+  // 自动调度基准值
+  baseWeight: number | null;
+  basePriority: number | null;
+  lastScheduleTime: string | null;
   // 废弃字段（保留向后兼容）
   tpm: number | null;
   rpm: number | null;
@@ -130,6 +139,11 @@ export interface UpdateProviderData {
   limit_weekly_usd?: number | null;
   limit_monthly_usd?: number | null;
   limit_concurrent_sessions?: number;
+
+  // 自动调度基准值
+  base_weight?: number | null;
+  base_priority?: number | null;
+  last_schedule_time?: Date | null;
 
   // 废弃字段（保留向后兼容）
   // TPM (Tokens Per Minute): 每分钟可处理的文本总量

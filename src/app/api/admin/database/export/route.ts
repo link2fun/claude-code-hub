@@ -6,7 +6,10 @@ import { getSession } from "@/lib/auth";
 /**
  * 导出数据库备份
  *
- * GET /api/admin/database/export
+ * GET /api/admin/database/export?excludeMessageRequest=true
+ *
+ * Query 参数:
+ *   - excludeMessageRequest: 'true' | 'false' (是否排除日志数据)
  *
  * 响应: application/octet-stream (pg_dump custom format)
  */
@@ -20,6 +23,10 @@ export async function GET(request: Request) {
       logger.warn({ action: "database_export_unauthorized" });
       return new Response("Unauthorized", { status: 401 });
     }
+
+    // 2. 解析查询参数
+    const url = new URL(request.url);
+    const excludeMessageRequest = url.searchParams.get("excludeMessageRequest") === "true";
 
     // 2. 尝试获取分布式锁（防止并发操作）
     lockId = await acquireBackupLock("export");
@@ -47,7 +54,7 @@ export async function GET(request: Request) {
     }
 
     // 4. 执行 pg_dump
-    const stream = executePgDump();
+    const stream = executePgDump(excludeMessageRequest);
 
     // 5. 生成文件名（带时间戳）
     const timestamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, -5);
@@ -56,6 +63,7 @@ export async function GET(request: Request) {
     logger.info({
       action: "database_export_initiated",
       filename,
+      excludeMessageRequest,
       user: session.user.name,
     });
 
